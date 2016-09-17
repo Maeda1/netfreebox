@@ -1,0 +1,23 @@
+#!/bin/bash
+#Script pour avoir les infos réseaux Freebox
+
+wget -O /tmp/fbx_info.txt -p --quiet http://mafreebox.freebox.fr/pub/fbx_info.txt
+cd /tmp/
+iconv -f ISO_8859-1 -t UTF-8 fbx_info.txt > free.txt
+cat free.txt | grep WAN | grep -q Ok
+if [ $? -ne 0 ];then
+	echo "Fb:⬤"
+	exit 0
+else
+	uld=$(cat free.txt | grep WAN | tr -d " " | tr -d [:alpha:] | cut -d "/" -f2)
+	dld1=$(cat free.txt | grep Switch | tr -d " " | tr -d [:alpha:] | cut -d "/" -f2)
+	dld2=$(cat free.txt | grep Ethernet | tr -d " " | tr -d [:alpha:] | cut -d "/" -f2)
+	debdl=$(expr $(cat free.txt | grep "Débit ATM" | tr -d " " | tr -d [:alpha:] | tr -d "é" | cut -d "/" -f1) \* 88 / 100 / 8)
+	debul=$(expr $(cat free.txt | grep "Débit ATM" | tr -d " " | tr -d [:alpha:] | tr -d "é" | cut -d "/" -f2) \* 88 / 100 / 8)
+	debdlactu=$(expr $dld1 + $dld2)
+	debulactu=$uld
+	pdebdlactu=$(echo "scale=2;($dld1+$dld2)/$debdl*100" | bc | cut -d "." -f1)
+	pdebulactu=$(echo "scale=2;$uld/$debul*100" | bc | cut -d "." -f1)
+	echo "⌜▴$debulactu➟$pdebulactu%⌟⌜▾$debdlactu➟$pdebdlactu%⌟"
+fi
+exit 0
